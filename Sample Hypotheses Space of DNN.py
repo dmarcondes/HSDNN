@@ -166,9 +166,9 @@ y_val_one_hot = to_categorical(y_val, 1000)
 #Model
 model = tf.keras.applications.MobileNetV2(include_top=True,weights="imagenet")
 depth = len(model.layers)
-tab = np.array("Layer","Mean10","SD10","Min10","1Q10","Med10","3Q10","Max10",
+tab = np.array(["Layer","Mean10","SD10","Min10","1Q10","Med10","3Q10","Max10",
 "Mean5","SD5","Min5","1Q5","Med5","3Q5","Max5",
-"Mean1","SD1","Min1","1Q1","Med1","3Q1","Max1")
+"Mean1","SD1","Min1","1Q1","Med1","3Q1","Max1"])
 
 for i in range(2):
     if len(model.layers[i].get_weights()) > 0 or i == 0:
