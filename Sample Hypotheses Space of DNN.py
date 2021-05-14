@@ -166,8 +166,10 @@ y_val_one_hot = to_categorical(y_val, 1000)
 #Model
 model = tf.keras.applications.MobileNetV2(include_top=True,weights="imagenet")
 depth = len(model.layers)
-tab = []
-for i in range(2):
+tab = np.array([("Layer","Mean10","SD10","Min10","1Q10","Med10","3Q10","Max10",
+"Mean5","SD5","Min5","1Q5","Med5","3Q5","Max5",
+"Mean1","SD1","Min1","1Q1","Med1","3Q1","Max1")
+for i in range(depth):
     if len(model.layers[i].get_weights()) > 0 or i == 0:
         print("layer "+str(i+1)+" from "+str(depth))
         err10 = np.array([])
@@ -188,8 +190,7 @@ for i in range(2):
             err1 = np.concatenate([err1,[m1]])
             y_pred = None
             col = gc.collect()
-        tab = tab + [(i,np.mean(err10),st.stdev(err10),np.percentile(err10,0),np.percentile(err10,25),np.percentile(err10,50),np.percentile(err10,75),np.percentile(err10,100),
+        tab = np.append(tab,np.array((i,np.mean(err10),st.stdev(err10),np.percentile(err10,0),np.percentile(err10,25),np.percentile(err10,50),np.percentile(err10,75),np.percentile(err10,100),
         np.mean(err5),st.stdev(err5),np.percentile(err5,0),np.percentile(err5,25),np.percentile(err5,50),np.percentile(err5,75),np.percentile(err5,100)),
-        np.mean(err1),st.stdev(err1),np.percentile(err1,0),np.percentile(err1,25),np.percentile(err1,50),np.percentile(err1,75),np.percentile(err1,100)]
-with open('results.txt', 'w') as f:
-    f.write(json.dumps(tab))
+        np.mean(err1),st.stdev(err1),np.percentile(err1,0),np.percentile(err1,25),np.percentile(err1,50),np.percentile(err1,75),np.percentile(err1,100))
+        np.savetxt("results.txt",tab,delimiter= ";")
