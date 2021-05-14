@@ -167,7 +167,7 @@ y_val_one_hot = to_categorical(y_val, 1000)
 model = tf.keras.applications.MobileNetV2(include_top=True,weights="imagenet")
 depth = len(model.layers)
 tab = []
-for i in range(depth):
+for i in range(2):
     if len(model.layers[i].get_weights()) > 0 or i == 0:
         print("layer "+str(i+1)+" from "+str(depth))
         err10 = np.array([])
@@ -183,9 +183,9 @@ for i in range(depth):
             m10 = top_k_accuracy(y_val_one_hot, y_pred, k=10)
             m5 = top_k_accuracy(y_val_one_hot, y_pred, k=5)
             m1 = top_k_accuracy(y_val_one_hot, y_pred, k=1)
-            err10 = np.concatenate([err10,[top10]])
-            err5 = np.concatenate([err5,[top5]])
-            err1 = np.concatenate([err1,[top1]])
+            err10 = np.concatenate([err10,[m10]])
+            err5 = np.concatenate([err5,[m5]])
+            err1 = np.concatenate([err1,[m1]])
             y_pred = None
             col = gc.collect()
         tab = tab + [(i,np.mean(err10),st.stdev(err10),np.percentile(err10,0),np.percentile(err10,25),np.percentile(err10,50),np.percentile(err10,75),np.percentile(err10,100),
