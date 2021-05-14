@@ -5,8 +5,8 @@ from pathlib import Path
 from glob import glob
 
 # Select GPU
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+#os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+#os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,9 +20,9 @@ import tensorflow.keras as keras
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras import backend as K
 
-tf.__version__
+#tf.__version__
 # Make sure GPU is available
-tf.config.list_physical_devices('GPU')
+#tf.config.list_physical_devices('GPU')
 
 #Size in human
 def humansize(nbytes):
@@ -46,21 +46,21 @@ def load_images(image_paths, returned_shard, n_shards=5):
     shard_size = len(image_paths) // n_shards
     sharded_image_paths = image_paths[returned_shard*shard_size:(returned_shard+1)*shard_size] if returned_shard < n_shards - 1 \
                      else image_paths[returned_shard*shard_size:]
-    images_list = np.zeros((len(sharded_image_paths), 299, 299, 3), dtype=np.uint8)
+    images_list = np.zeros((len(sharded_image_paths), 224, 224, 3), dtype=np.uint8)
     for i, image_path in enumerate(sharded_image_paths):
         # Load (in BGR channel order)
         image = cv2.imread(image_path)
         # Resize
         height, width, _ = image.shape
-        new_height = height * 300 // min(image.shape[:2])
-        new_width = width * 300 // min(image.shape[:2])
+        new_height = height * 256 // min(image.shape[:2])
+        new_width = width * 256 // min(image.shape[:2])
         image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
         # Crop
         height, width, _ = image.shape
-        startx = width//2 - (299//2)
-        starty = height//2 - (299//2)
-        image = image[starty:starty+299,startx:startx+299]
-        assert image.shape[0] == 299 and image.shape[1] == 299, (image.shape, height, width)
+        startx = width//2 - (224//2)
+        starty = height//2 - (224//2)
+        image = image[starty:starty+224,startx:startx+224]
+        assert image.shape[0] == 224 and image.shape[1] == 224, (image.shape, height, width)
         images_list[i, ...] = image[..., ::-1]
     return images_list
 
@@ -68,8 +68,8 @@ def load_images(image_paths, returned_shard, n_shards=5):
 def top_k_accuracy(y_true, y_pred, k=1, tf_enabled=True):
     '''
     Calculates top_k accuracy of predictions. Expects both y_true and y_pred to be one-hot encoded.
-    numpy implementation is from: https://github.com/chainer/chainer/issues/606
-    '''
+#    numpy implementation is from: https://github.com/chainer/chainer/issues/606
+#    '''
     if tf_enabled:
         argsorted_y = tf.argsort(y_pred)[:,-k:]
         matches = tf.cast(tf.math.reduce_any(tf.transpose(argsorted_y) == tf.argmax(y_true, axis=1, output_type=tf.int32), axis=0), tf.float32)
@@ -79,11 +79,14 @@ def top_k_accuracy(y_true, y_pred, k=1, tf_enabled=True):
         return np.any(argsorted_y.T == y_true.argmax(axis=1), axis=0).mean()
 
 #Paths to files
-path_imagenet_val_dataset = Path("/home/dmarcondes/ILSVRC2012_img_val/images/") # path/to/data/
-dir_images = Path("/home/dmarcondes/ILSVRC2012_img_val/jpeg/") # path/to/images/directory
-path_labels = Path("/home/dmarcondes/ILSVRC2012_img_val/data/ILSVRC2012_validation_ground_truth.txt")
-path_synset_words = Path("/home/dmarcondes/ILSVRC2012_img_val/data/synset_words.txt")
-path_meta = Path("/home/dmarcondes/ILSVRC2012_img_val/data/meta.mat")
+#root = "/home/dmarcondes/ILSVRC2012_img_val/"
+#root = "/scratch/8940900/imagenet_val"
+root = "imagenet_val/"
+path_imagenet_val_dataset = Path(root+"images/") # path/to/data/
+dir_images = Path(root+"jpeg/") # path/to/images/directory
+path_labels = Path(root+"data/ILSVRC2012_validation_ground_truth.txt")
+path_synset_words = Path(root+"data/synset_words.txt")
+path_meta = Path(root+"data/meta.mat")
 
 #Converting labels
 meta = scipy.io.loadmat(str(path_meta))
@@ -121,7 +124,7 @@ n_images
 exist_shards = len(sorted(glob(str(path_imagenet_val_dataset/"*")))) - 1
 
 #Dividing the images in 500 shards if it has not been done before
-n_shards = 500
+n_shards = 1
 if n_shards != exist_shards:
     for i in range(n_shards):
         images = load_images(image_paths, returned_shard=i, n_shards=n_shards)
@@ -133,9 +136,9 @@ if n_shards != exist_shards:
         images = None
 
 #Show examples
-examples = True
+examples = False
 if examples:
-    idx_shard = 4
+    idx_shard = 1
     x_val = np.load(str(path_imagenet_val_dataset/"x_val_{}.npy").format(idx_shard))
     n_images2show = 15
     n_cols = 3
@@ -152,47 +155,38 @@ if examples:
     plt.show()
 
 #Load data
-x_val_paths = glob(str(path_imagenet_val_dataset / "x_val*.npy"))
-x_val_paths.sort(key=lambda f: int(re.sub('\D', '', f)))
+x_val_path = glob(str(path_imagenet_val_dataset / "x_val*.npy"))
+x_val_path.sort(key=lambda f: int(re.sub('\D', '', f)))
+x_val = np.load(x_val_path[0]).astype('float32')
+x_val = tf.keras.applications.mobilenet_v2.preprocess_input(x_val)
 y_val = np.load(str(path_imagenet_val_dataset / "y_val.npy"))
 y_val_one_hot = to_categorical(y_val, 1000)
 
 #Model
-model = tf.keras.applications.Xception(include_top=True,weights="imagenet")
+model = tf.keras.applications.MobileNetV2(include_top=True,weights="imagenet")
 depth = len(model.layers)
 tab = []
 for i in range(depth):
-    print("layer "+str(i+1))
-    err10 = np.array([])
-    err5 = np.array([])
-    err1 = np.array([])
-    for r in range(1000):
-        print("Repetition " + str(r+1))
-        modelRandom = tf.keras.applications.Xception(include_top=True,weights = None)
-        if i > 0:
-            for j in range(i):
-                modelRandom.layers[j].set_weights(model.layers[j].get_weights())
-y_pred = None
-for k, x_val_path in enumerate(x_val_paths):
-    x_val = np.load(x_val_path).astype('float32') # loaded as RGB
-    y_pred_sharded = modelRandom.predict(x_val, verbose=0, use_multiprocessing=True, batch_size=64, callbacks=None)
-    try:
-        y_pred = np.concatenate([y_pred, y_pred_sharded])
-    except ValueError:
-        y_pred = y_pred_sharded
-    del x_val
-    gc.collect()
-    completed_percentage = (k + 1) * 100 / len(x_val_paths)
-    if completed_percentage % 5 == 0:
-        print("{:5.1f}% completed.".format(completed_percentage))
-
-
-    top10 = top_k_accuracy(y_val_one_hot, y_pred, k=10)
-    top5 = top_k_accuracy(y_val_one_hot, y_pred, k=5)
-    top1 = top_k_accuracy(y_val_one_hot, y_pred, k=1)
-    err10 = np.concatenate([err10,[top10]])
-    err5 = np.concatenate([err5,[top5]])
-    err1 = np.concatenate([err1,[top1]])
-    tab = tab + [(i,np.mean(err10),st.stdev(err10),np.percentile(err10,0),np.percentile(err10,25),np.percentile(err10,50),np.percentile(err10,75),np.percentile(err10,100),
-    np.mean(err5),st.stdev(err5),np.percentile(err5,0),np.percentile(err5,25),np.percentile(err5,50),np.percentile(err5,75),np.percentile(err5,100)),
-    np.mean(err1),st.stdev(err1),np.percentile(err1,0),np.percentile(err1,25),np.percentile(err1,50),np.percentile(err1,75),np.percentile(err1,100)]
+    if len(model.layers[i].get_weights()) > 0 or i == 0:
+        print("layer "+str(i+1)+" from "+str(depth))
+        err10 = np.array([])
+        err5 = np.array([])
+        err1 = np.array([])
+        for r in range(100):
+            print("Repetition " + str(r+1))
+            modelRandom = tf.keras.applications.Xception(include_top=True,weights = None)
+            if i > 0:
+                for j in range(i):
+                    modelRandom.layers[j].set_weights(model.layers[j].get_weights())
+            y_pred = model.predict(x_val, verbose=1, use_multiprocessing=True, batch_size=64, callbacks=None)
+            m10 = top_k_accuracy(y_val_one_hot, y_pred, k=10)
+            m5 = top_k_accuracy(y_val_one_hot, y_pred, k=5)
+            m1 = top_k_accuracy(y_val_one_hot, y_pred, k=1)
+            err10 = np.concatenate([err10,[top10]])
+            err5 = np.concatenate([err5,[top5]])
+            err1 = np.concatenate([err1,[top1]])
+            y_pred = None
+            col = gc.collect()
+        tab = tab + [(i,np.mean(err10),st.stdev(err10),np.percentile(err10,0),np.percentile(err10,25),np.percentile(err10,50),np.percentile(err10,75),np.percentile(err10,100),
+        np.mean(err5),st.stdev(err5),np.percentile(err5,0),np.percentile(err5,25),np.percentile(err5,50),np.percentile(err5,75),np.percentile(err5,100)),
+        np.mean(err1),st.stdev(err1),np.percentile(err1,0),np.percentile(err1,25),np.percentile(err1,50),np.percentile(err1,75),np.percentile(err1,100)]
