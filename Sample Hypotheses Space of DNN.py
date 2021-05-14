@@ -175,7 +175,7 @@ for i in range(depth):
         err10 = np.array([])
         err5 = np.array([])
         err1 = np.array([])
-        for r in range(3):
+        for r in range(100):
             print("Repetition " + str(r+1))
             modelRandom = tf.keras.applications.MobileNetV2(include_top=True,weights = None)
             if i > 0:
