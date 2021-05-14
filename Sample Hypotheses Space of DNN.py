@@ -175,7 +175,7 @@ for i in range(depth):
         err10 = np.array([])
         err5 = np.array([])
         err1 = np.array([])
-        for r in range(3):
+        for r in range(100):
             print("Repetition " + str(r+1))
             modelRandom = tf.keras.applications.MobileNetV2(include_top=True,weights = None)
             if i > 0:
@@ -198,4 +198,4 @@ for i in range(depth):
             tab = np.array([(i,np.mean(err10),st.stdev(err10),np.percentile(err10,0),np.percentile(err10,25),np.percentile(err10,50),np.percentile(err10,75),np.percentile(err10,100),
             np.mean(err5),st.stdev(err5),np.percentile(err5,0),np.percentile(err5,25),np.percentile(err5,50),np.percentile(err5,75),np.percentile(err5,100)),
             np.mean(err1),st.stdev(err1),np.percentile(err1,0),np.percentile(err1,25),np.percentile(err1,50),np.percentile(err1,75),np.percentile(err1,100)])
-        np.save("results.npy",tab,fmt = '%s')
+        np.save("results.npy",tab)
