@@ -3,6 +3,7 @@
 import sys, os, time, re, gc
 from pathlib import Path
 from glob import glob
+import json
 
 # Select GPU
 #os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
@@ -172,13 +173,13 @@ for i in range(depth):
         err10 = np.array([])
         err5 = np.array([])
         err1 = np.array([])
-        for r in range(100):
+        for r in range(3):
             print("Repetition " + str(r+1))
             modelRandom = tf.keras.applications.Xception(include_top=True,weights = None)
             if i > 0:
                 for j in range(i):
                     modelRandom.layers[j].set_weights(model.layers[j].get_weights())
-            y_pred = model.predict(x_val, verbose=1, use_multiprocessing=True, batch_size=32, callbacks=None)
+            y_pred = model.predict(x_val, verbose=1, use_multiprocessing=True, batch_size=64, callbacks=None)
             m10 = top_k_accuracy(y_val_one_hot, y_pred, k=10)
             m5 = top_k_accuracy(y_val_one_hot, y_pred, k=5)
             m1 = top_k_accuracy(y_val_one_hot, y_pred, k=1)
@@ -190,3 +191,5 @@ for i in range(depth):
         tab = tab + [(i,np.mean(err10),st.stdev(err10),np.percentile(err10,0),np.percentile(err10,25),np.percentile(err10,50),np.percentile(err10,75),np.percentile(err10,100),
         np.mean(err5),st.stdev(err5),np.percentile(err5,0),np.percentile(err5,25),np.percentile(err5,50),np.percentile(err5,75),np.percentile(err5,100)),
         np.mean(err1),st.stdev(err1),np.percentile(err1,0),np.percentile(err1,25),np.percentile(err1,50),np.percentile(err1,75),np.percentile(err1,100)]
+with open('results.txt', 'w') as f:
+    f.write(json.dumps(tab))
