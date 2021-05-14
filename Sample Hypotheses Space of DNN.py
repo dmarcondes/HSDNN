@@ -178,7 +178,7 @@ for i in range(depth):
             if i > 0:
                 for j in range(i):
                     modelRandom.layers[j].set_weights(model.layers[j].get_weights())
-            y_pred = model.predict(x_val, verbose=1, use_multiprocessing=True, batch_size=64, callbacks=None)
+            y_pred = model.predict(x_val, verbose=1, use_multiprocessing=True, batch_size=32, callbacks=None)
             m10 = top_k_accuracy(y_val_one_hot, y_pred, k=10)
             m5 = top_k_accuracy(y_val_one_hot, y_pred, k=5)
             m1 = top_k_accuracy(y_val_one_hot, y_pred, k=1)
