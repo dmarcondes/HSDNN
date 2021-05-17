@@ -173,12 +173,12 @@ tab = np.array([])
 
 for i in tqdm(range(depth)):
     if len(model.layers[i].get_weights()) > 0 or i == 0:
-        print("layer "+str(i+1)+" from "+str(depth))
+        #print("layer "+str(i+1)+" from "+str(depth))
         err10 = np.array([])
         err5 = np.array([])
         err1 = np.array([])
         for r in tqdm(range(100)):
-            print("Repetition " + str(r+1))
+            #print("Repetition " + str(r+1))
             modelRandom = tf.keras.applications.MobileNetV2(include_top=True,weights = None)
             m1 = tf.keras.applications.MobileNetV2(include_top=True,weights = None)
             if i > 0:
