@@ -22,7 +22,7 @@ import tensorflow.keras as keras
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras import backend as K
 tf.keras.backend.set_learning_phase(0)
-from tf.keras.backend import clear_session
+from tensorflow.keras.backend import clear_session
 
 #tf.__version__
 # Make sure GPU is available
