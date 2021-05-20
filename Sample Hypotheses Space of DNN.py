@@ -161,9 +161,9 @@ if examples:
 #Load data
 x_val_path = glob(str(path_imagenet_val_dataset / "x_val*.npy"))
 x_val_path.sort(key=lambda f: int(re.sub('\D', '', f)))
-x_val = np.load(x_val_path[0]).astype('float32')[0:5000]
+x_val = np.load(x_val_path[0]).astype('float32')[0:1000]
 x_val = tf.keras.applications.mobilenet_v2.preprocess_input(x_val)
-y_val = np.load(str(path_imagenet_val_dataset / "y_val.npy"))[0:5000]
+y_val = np.load(str(path_imagenet_val_dataset / "y_val.npy"))[0:1000]
 y_val_one_hot = to_categorical(y_val, 1000)
 
 #Model
@@ -173,17 +173,21 @@ tab = np.array([])
 
 for i in tqdm(range(depth)):
     if len(model.layers[i].get_weights()) > 0 or i == 0:
-        #print("layer "+str(i+1)+" from "+str(depth))
         err10 = np.array([])
         err5 = np.array([])
         err1 = np.array([])
         for r in tqdm(range(100)):
-            #print("Repetition " + str(r+1))
-            modelRandom = tf.keras.applications.MobileNetV2(include_top=True,weights = None)
-            m1 = tf.keras.applications.MobileNetV2(include_top=True,weights = None)
-            if i > 0:
-                for j in range(i+1):
-                    modelRandom.layers[j].set_weights(model.layers[j].get_weights())
+            modelRandom = model
+            if i > 0 :
+                for j in range(i):
+                    w = model.layers[j].get_weights()
+                    for k in range(len(w)):
+                        w[k] = w[k] + np.random.normal(0,np.std(w[k]),w[k].shape)
+                    modelRandom.layers[j].set_weights(w)
+            #modelRandom = tf.keras.applications.MobileNetV2(include_top=True,weights = None)
+            #if i > 0:
+            #    for j in range(i+1):
+            #        modelRandom.layers[j].set_weights(model.layers[j].get_weights())
             y_pred = modelRandom.predict(x_val, verbose=0, use_multiprocessing=True, batch_size=128, callbacks=None)
             m10 = top_k_accuracy(y_val_one_hot, y_pred, k=10)
             m5 = top_k_accuracy(y_val_one_hot, y_pred, k=5)
@@ -202,8 +206,28 @@ for i in tqdm(range(depth)):
             tab = np.array([i,np.mean(err10),st.stdev(err10),np.percentile(err10,0),np.percentile(err10,25),np.percentile(err10,50),np.percentile(err10,75),np.percentile(err10,100),
             np.mean(err5),st.stdev(err5),np.percentile(err5,0),np.percentile(err5,25),np.percentile(err5,50),np.percentile(err5,75),np.percentile(err5,100),
             np.mean(err1),st.stdev(err1),np.percentile(err1,0),np.percentile(err1,25),np.percentile(err1,50),np.percentile(err1,75),np.percentile(err1,100)])
-        np.save("results.npy",tab)
+        np.save("results_random.npy",tab)
 
-tab = np.load("results.npy",allow_pickle=True)
+tab = np.load("results_random.npy",allow_pickle=True)
 df = pd.DataFrame(data=tab.reshape((-1,22)))
-pd.DataFrame.to_csv(df,"results.txt")
+pd.DataFrame.to_csv(df,"results_random.txt")
+
+####Testes#####
+#x_val_path = glob(str(path_imagenet_val_dataset / "x_val*.npy"))
+#x_val_path.sort(key=lambda f: int(re.sub('\D', '', f)))
+#x_val = np.load(x_val_path[0]).astype('float32')
+#x_val = tf.keras.applications.inception_v3.preprocess_input(x_val)
+#y_val = np.load(str(path_imagenet_val_dataset / "y_val.npy"))[0:5000]
+#y_val_one_hot = to_categorical(y_val, 1000)
+
+#Model
+#model = tf.keras.applications.InceptionV3(include_top=True,weights="imagenet")
+#modelRandom = model
+#for j in range(i,len(model.layers)):
+#    w = model.layers[j].get_weights()
+#    for k in range(len(w)):
+#        w[k] = w[k] + np.random.normal(0,np.std(w[k]),w[k].shape)
+#    modelRandom.layers[j].set_weights(w)
+
+#y_pred = modelRandom.predict(x_val, verbose=0, use_multiprocessing=True, batch_size=128, callbacks=None)
+#top_k_accuracy(y_val_one_hot, y_pred, k=10)
